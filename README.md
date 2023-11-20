@@ -12,5 +12,5 @@ Add the node as you would any other, then connect its output to a Compel positiv
 Note: the first time you use this node in your workflow, it'll download a text generation model.
 The default model is the Nightmare Promptgen XL model `cactusfriend/nightmare-promptgen-XL` (1.5gb), but if you'd like to save memory and download time, feel free to try the original: `cactusfriend/nightmare-invokeai-prompts` (550mb). These models were specifically trained with InvokeAI's Compel prompt format in mind, but feel free to try other text generation models!
 
-## TODO
-Support external files for the find/replace and model selection features
+## The `nightmare.yaml` config file
+You can add Huggingface repo IDs (or local file paths) for textgen models to the `Models` section, and words and a list of their replacements to the `Replace` section.
