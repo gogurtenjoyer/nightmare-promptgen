@@ -1,13 +1,18 @@
+import os
 from typing import Literal, Union
 import random as r
 import re
 
 #import torch
+
+from omegaconf import OmegaConf
+from pydantic import BaseModel, Field
 from transformers import pipeline
 
 from invokeai.app.invocations.baseinvocation import (
     BaseInvocation,
     BaseInvocationOutput,
+    Input,
     InputField,
     InvocationContext,
     invocation,
@@ -16,15 +21,12 @@ from invokeai.app.invocations.baseinvocation import (
     UIComponent
 )
 
-# some example censorship behavior
-# the word before : is replaced by any of the words between the []s
-# feel free to add more, don't forget commas and quotes!
 
-REPLACE = {
-    'Dunston': ['Alien Fanky', 'Ralph', 'Puppers Guy', 'Wheedle', 'Ditch Man'],
-    'orangutan': ['jungle animal', 'treetop monster', 'sloth'],
-    'nude': ['attired', 'well-dressed', 'suited up']
-}
+INVOKEAI_ROOT = os.getenv('INVOKEAI_ROOT')
+conf = OmegaConf.load(f'{INVOKEAI_ROOT}/nodes/nightmare-promptgen/nightmare.yaml')
+MODEL_REPOS = Literal[tuple(conf['Nightmare']['Models'])]
+REPLACE = conf['Nightmare']['Replace']
+
 
 @invocation_output("nightmare_str_output")
 class NightmareOutput(BaseInvocationOutput):
@@ -32,7 +34,8 @@ class NightmareOutput(BaseInvocationOutput):
     prompt: str = OutputField(description="The generated nightmare prompt string")
 
 
-@invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"], category="prompt", version="1.0.0")
+@invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
+            category="prompt", version="1.0.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -41,9 +44,8 @@ class NightmareInvocation(BaseInvocation):
     temp: float = InputField(default=1.8, ge=0.7, le=3.0, description="Temperature")
     top_p: float = InputField(default=0.9, ge=0.2, le=0.95, description="Top P sampling")
     top_k: int = InputField(default=40, ge=5, le=60, description="Top K sampling")
-    repo_id: str = InputField(default="cactusfriend/nightmare-promptgen-XL", 
-                         description="Accepts a HF Repo ID or a local folder path")
-
+    repo_id: MODEL_REPOS = InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
+    
 
     def loadGenerator(self, repo_id: str):
         """loads the tokenizer, model, etc for the generator"""
