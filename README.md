@@ -14,3 +14,10 @@ The default model is the Nightmare Promptgen XL model `cactusfriend/nightmare-pr
 
 ## The `nightmare.yaml` config file
 You can add Huggingface repo IDs (or local file paths) for textgen models to the `Models` section, and words and a list of their replacements to the `Replace` section.
+
+### New (old) replace behavior
+The default word replacement behavior checks that the word is separated from others by whitespace or punctuation; for example:
+
+- replacing 'ape' in "my ape friend" would work, but in "I love grapes", it wouldn't.
+
+If you'd like to override the 'word check' behavior, you can surround your word in `^` signs. In this case, `^ape^` would replace the text in both examples above. There's an example of this in `nightmare.yaml`.
