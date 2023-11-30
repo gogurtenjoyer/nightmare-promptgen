@@ -21,9 +21,9 @@ from invokeai.app.invocations.baseinvocation import (
     UIComponent
 )
 
-
-INVOKEAI_ROOT = os.getenv('INVOKEAI_ROOT')
-conf = OmegaConf.load(f'{INVOKEAI_ROOT}/nodes/nightmare-promptgen/nightmare.yaml')
+# load the config file - thanks to SkunkWorxDark for the update here
+CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.yaml")
+conf = OmegaConf.load(CONF_PATH)
 MODEL_REPOS = Literal[tuple(conf['Nightmare']['Models'])]
 REPLACE = conf['Nightmare']['Replace']
 
@@ -35,7 +35,7 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.0.0", use_cache=False)
+            category="prompt", version="1.0.1", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -61,7 +61,12 @@ class NightmareInvocation(BaseInvocation):
     def censor(self, phrase: str):
         """simple sanitization for sanity"""
         for k, v in REPLACE.items():
-            phrase = re.sub(r"\b{}\b".format(k), r.choice(REPLACE[k]), phrase, flags=re.I | re.M)
+            if k.startswith("^") and k.endswith("^"):
+                kclean = k.replace("^", "")
+                print(kclean)
+                phrase = re.sub(kclean, r.choice(REPLACE[k]), phrase, flags=re.IGNORECASE)
+            else:
+                phrase = re.sub(r"\b{}\b".format(k), r.choice(REPLACE[k]), phrase, flags=re.I | re.M)
         return phrase
 
 

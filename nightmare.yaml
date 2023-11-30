@@ -17,3 +17,5 @@ Nightmare:
       - attired
       - well-dressed
       - suited-up
+    ^test^:
+      - CORRECT
