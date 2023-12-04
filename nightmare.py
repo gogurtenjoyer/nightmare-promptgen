@@ -23,7 +23,12 @@ from invokeai.app.invocations.baseinvocation import (
 
 # load the config file - thanks to SkunkWorxDark for the update here
 CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.yaml")
-conf = OmegaConf.load(CONF_PATH)
+DEFAULT_CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.default.yaml")
+try:
+    conf = OmegaConf.load(CONF_PATH)
+except:
+    print("nightmare.yaml not found or not parsed correctly - loading nightmare.default.yaml instead...")
+    conf = OmegaConf.load(DEFAULT_CONF_PATH)
 MODEL_REPOS = Literal[tuple(conf['Nightmare']['Models'])]
 REPLACE = conf['Nightmare']['Replace']
 
@@ -63,8 +68,7 @@ class NightmareInvocation(BaseInvocation):
         for k, v in REPLACE.items():
             if k.startswith("^") and k.endswith("^"):
                 kclean = k.replace("^", "")
-                print(kclean)
-                phrase = re.sub(kclean, r.choice(REPLACE[k]), phrase, flags=re.IGNORECASE)
+                phrase = re.sub(kclean, r.choice(REPLACE[k]), phrase, flags=re.I | re.M)
             else:
                 phrase = re.sub(r"\b{}\b".format(k), r.choice(REPLACE[k]), phrase, flags=re.I | re.M)
         return phrase

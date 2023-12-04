@@ -1,0 +1,21 @@
+Nightmare:
+  Models:
+    - cactusfriend/nightmare-promptgen-XL
+    - cactusfriend/nightmare-invokeai-prompts
+  Replace:
+    Dunston:
+      - Alien Fanky
+      - Ralph
+      - Puppers Guy
+      - Wheedle
+      - Ditch Man
+    orangutan:
+      - jungle animal
+      - treetop monster
+      - sloth
+    nude:
+      - attired
+      - well-dressed
+      - suited-up
+    ^test^:
+      - CORRECT
