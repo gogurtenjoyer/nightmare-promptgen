@@ -2,10 +2,12 @@
 An InvokeAI node that supports text generation models (gpt-neo, llama, etc) to create Stable Diffusion prompts
 
 ## Installation
-Navigate to your nodes folder (in your InvokeAI 3.4 root folder), and run
+Navigate to your nodes folder (in your InvokeAI 3.4+ root folder), and run
 ```
 git clone https://github.com/gogurtenjoyer/nightmare-promptgen
 ```
+Alternately, you can download a zip of this repo with the green button in the upper-right here, and unzip it in your nodes folder.
+
 ## Usage
 Add the node as you would any other, then connect its output to a Compel positive prompt node, or similar.
 
