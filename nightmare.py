@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 from pydantic import BaseModel, Field
 from transformers import pipeline
 
-# from invokeai.backend.util.devices import choose_torch_device, choose_precision
+from invokeai.backend.util.devices import choose_torch_device, choose_precision
 
 from invokeai.app.invocations.baseinvocation import (
     BaseInvocation,
@@ -31,10 +31,10 @@ except:
     conf = OmegaConf.load(DEFAULT_CONF_PATH)
 MODEL_REPOS = Literal[tuple(conf['Nightmare']['Models'])]
 REPLACE = conf['Nightmare']['Replace']
-# MEM_CACHE = True
+MEM_CACHE = True
 
-# dev = choose_torch_device()
-# precis = choose_precision(dev)
+dev = choose_torch_device()
+precis = choose_precision(dev)
 # print("***NIGHTMARE PROMPTGEN DEBUG***")
 # print(f"device: {dev}, precision: {precis}")
 # print("*"*30)
@@ -46,25 +46,21 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.0.2", use_cache=False)
+            category="prompt", version="1.1.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
     # Inputs
     prompt: str = InputField(default="", description="prompt for the nightmare")
-    temp: float = InputField(default=1.8, ge=0.7, le=3.0, description="Temperature")
-    top_p: float = InputField(default=0.9, ge=0.2, le=0.95, description="Top P sampling")
-    top_k: int = InputField(default=40, ge=5, le=60, description="Top K sampling")
+    temp: float = InputField(default=1.8, ge=0.5, le=4.0, description="Temperature")
+    top_p: float = InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
+    top_k: int = InputField(default=20, ge=5, le=80, description="Top K sampling")
     repo_id: MODEL_REPOS = InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
-    
+
 
     def loadGenerator(self, repo_id: str):
-        """loads the tokenizer, model, etc for the generator"""
-
-        # TODO: determine if hardware accel is even worth it at all       
-        # generator = pipeline(model=repo_id, tokenizer=repo_id, task="text-generation", device=dev)
-
-        generator = pipeline(model=repo_id, tokenizer=repo_id, task="text-generation")
+        """loads the tokenizer, model, etc for the generator"""     
+        generator = pipeline(model=repo_id, tokenizer=repo_id, task="text-generation", use_fast=False, device=dev)
         return generator
 
 
@@ -102,6 +98,7 @@ class NightmareInvocation(BaseInvocation):
                             do_sample=True, top_p=p, top_k=k,
                             num_return_sequences=1,
                             pad_token_id=generator.tokenizer.eos_token_id)
+
         del generator
         return self.censor(output[0]['generated_text'].strip())
 
