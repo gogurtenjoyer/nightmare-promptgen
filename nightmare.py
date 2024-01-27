@@ -46,7 +46,7 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.1.5", use_cache=False)
+            category="prompt", version="1.1.6", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -103,7 +103,7 @@ class NightmareInvocation(BaseInvocation):
                             pad_token_id=generator.tokenizer.eos_token_id)
 
         del generator
-        return self.censor(output[0]['generated_text'].strip())
+        return self.censor(output[0]['generated_text'].rstrip())
 
 
     def invoke(self, context: InvocationContext) -> NightmareOutput:
