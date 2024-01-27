@@ -46,16 +46,18 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.1.0", use_cache=False)
+            category="prompt", version="1.1.5", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
     # Inputs
-    prompt: str = InputField(default="", description="prompt for the nightmare")
-    temp: float = InputField(default=1.8, ge=0.5, le=4.0, description="Temperature")
-    top_p: float = InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
-    top_k: int = InputField(default=20, ge=5, le=80, description="Top K sampling")
-    repo_id: MODEL_REPOS = InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
+    prompt: str =             InputField(default="", description="starting point for the generated prompt", ui_component=UIComponent.Textarea)
+    split_prompt: bool =      InputField(default=False, description="If the prompt is too long, will split it with .and()")
+    max_new_tokens: int =     InputField(default=300, ge=5, le=800, description="the maximum allowed amount of new tokens to generate")
+    temp: float =             InputField(default=1.8, ge=0.5, le=4.0, description="Temperature")
+    top_p: float =            InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
+    top_k: int =              InputField(default=20, ge=5, le=80, description="Top K sampling")
+    repo_id: MODEL_REPOS =    InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
 
 
     def loadGenerator(self, repo_id: str):
@@ -75,28 +77,29 @@ class NightmareInvocation(BaseInvocation):
         return phrase
 
 
-    # def splitPrompt(text):
-    #     """ If the prompt is too long, let's split it up for blend/and """
-    #     puncts = ['.', ',', ';', '--']
-    #     splitted = []
-    #     while len(text) > 300:
-    #         cut_where, cut_why = max((text.rfind(punc, 0, 293), punc) for punc in puncts)
-    #         if cut_where <= 0:
-    #             cut_where = text.rfind(' ', 0, 293)
-    #             cut_why = ' '
-    #         cut_where += len(cut_why)
-    #         splitted.append(text[:cut_where].rstrip())
-    #         text = text[cut_where:].lstrip()
-    #     splitted.append(text)
-    #     return splitted
+    def splitPrompt(self, text):
+        """ If the prompt is too long, let's split it up for .and() """
+        puncts = ['.', ',', ';', '--']
+        splitted = []
+        while len(text) > 200:
+            cut_where, cut_why = max((text.rfind(punc, 0, 193), punc) for punc in puncts)
+            if cut_where <= 0:
+                cut_where = text.rfind(' ', 0, 193)
+                cut_why = ' '
+            cut_where += len(cut_why)
+            splitted.append(text[:cut_where].rstrip())
+            text = text[cut_where:].lstrip()
+        splitted.append(text)
+        return splitted
 
 
-    def makePrompts(self, prompt: str, temp: float, p: float, k: int):
+    def makePrompts(self, prompt: str, temp: float, p: float, k: int, mnt: int):
         """loads textgen model, generates a (str) prompt, unloads model"""
         generator = self.loadGenerator(self.repo_id)
-        output = generator(prompt, max_new_tokens=300, temperature=temp,
+        output = generator(prompt, max_new_tokens=mnt, temperature=temp,
                             do_sample=True, top_p=p, top_k=k,
                             num_return_sequences=1,
+                            return_full_text=False,
                             pad_token_id=generator.tokenizer.eos_token_id)
 
         del generator
@@ -105,8 +108,19 @@ class NightmareInvocation(BaseInvocation):
 
     def invoke(self, context: InvocationContext) -> NightmareOutput:
         """ does the thing """
-        unescaped = self.makePrompts(self.prompt.strip(), self.temp, self.top_p, self.top_k)
-        generated = unescaped.replace('"', r'\"').strip()
+        endsWithSpace = (self.prompt[-1] == " ")
+        prompt = self.prompt.strip()
+        unescaped = self.makePrompts(prompt, self.temp, self.top_p, self.top_k, self.max_new_tokens)
+        generated = unescaped.replace('"', r'\"').rstrip()
+        prompt = f"{prompt}{endsWithSpace and ' ' or ''}"
+        generated = f"{prompt}{generated}"
+        if len(generated) > 200 and self.split_prompt:
+            context.services.logger.info("[nightmare promptgen] I AM GONNA SPLIT!!!")
+            start = '("'
+            end = '").and()'
+            split_prompt = self.splitPrompt(generated)
+            together = '","'.join([i for i in split_prompt])
+            generated = f"{start}{together}{end}"
         nl, bl, nr = "\n", "\033[1m", "\033[0m"
-        context.services.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{unescaped}{nl}")
+        context.services.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
         return NightmareOutput(prompt=generated)
