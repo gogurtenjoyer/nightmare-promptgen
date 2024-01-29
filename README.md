@@ -36,3 +36,5 @@ If you'd like to override the 'word check' behavior, you can surround your word 
 
 ## Tips and Tricks
 If you'd like to use the Split Prompt feature, please keep in mind that you should send its output directly to the Compel prompt node, so that no other 'joined in' text could mess with the `and()` formatting. It's fine to join text into Nightmare Promptgen's 'prompt' input, though. Also, keep in mind that quotation marks should be escaped like `\"` in this prompt starter (Nightmare Promptgen handles escaping its generated quotation marks but doesn't do this for its input).
+
+Adjusting the min and max new tokens generated can alter generation time dramatically. Because of this, there's also a max time setting that'll let you set (in seconds) the amount of allowed generation time. It'll overrule the other settings - think of it as a 'failsafe'.
