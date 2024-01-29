@@ -46,7 +46,7 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.1.6", use_cache=False)
+            category="prompt", version="1.2.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -54,6 +54,8 @@ class NightmareInvocation(BaseInvocation):
     prompt: str =             InputField(default="", description="starting point for the generated prompt", ui_component=UIComponent.Textarea)
     split_prompt: bool =      InputField(default=False, description="If the prompt is too long, will split it with .and()")
     max_new_tokens: int =     InputField(default=300, ge=5, le=800, description="the maximum allowed amount of new tokens to generate")
+    min_new_tokens: int =     InputField(default=30, ge=3, le=500, description="the minimum new tokens - NOTE, this can increase generation time")
+    max_time: float =         InputField(default=10.0, ge=5.0, le=120.0, description="Overrules min tokens; the max amount of time allowed to generate")
     temp: float =             InputField(default=1.8, ge=0.5, le=4.0, description="Temperature")
     top_p: float =            InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
     top_k: int =              InputField(default=20, ge=5, le=80, description="Top K sampling")
@@ -93,10 +95,11 @@ class NightmareInvocation(BaseInvocation):
         return splitted
 
 
-    def makePrompts(self, prompt: str, temp: float, p: float, k: int, mnt: int):
+    def makePrompts(self, prompt: str, temp: float, p: float, k: int, mnt: int, mnnt: int, time: float):
         """loads textgen model, generates a (str) prompt, unloads model"""
         generator = self.loadGenerator(self.repo_id)
-        output = generator(prompt, max_new_tokens=mnt, temperature=temp,
+        output = generator(prompt, max_new_tokens=mnt, min_new_tokens=mnnt, 
+                            temperature=temp, max_time=time,
                             do_sample=True, top_p=p, top_k=k,
                             num_return_sequences=1,
                             return_full_text=False,
@@ -110,7 +113,8 @@ class NightmareInvocation(BaseInvocation):
         """ does the thing """
         endsWithSpace = (self.prompt[-1] == " ")
         prompt = self.prompt.strip()
-        unescaped = self.makePrompts(prompt, self.temp, self.top_p, self.top_k, self.max_new_tokens)
+        unescaped = self.makePrompts(prompt, self.temp, self.top_p, self.top_k, 
+                    self.max_new_tokens, self.min_new_tokens, self.max_time)
         generated = unescaped.replace('"', r'\"').rstrip()
         prompt = f"{prompt}{endsWithSpace and ' ' or ''}"
         generated = f"{prompt}{generated}"
@@ -121,6 +125,7 @@ class NightmareInvocation(BaseInvocation):
             split_prompt = self.splitPrompt(generated)
             together = '","'.join([i for i in split_prompt])
             generated = f"{start}{together}{end}"
+            generated = re.sub('\s+',' ', generated)
         nl, bl, nr = "\n", "\033[1m", "\033[0m"
         context.services.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
         return NightmareOutput(prompt=generated)
