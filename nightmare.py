@@ -46,20 +46,26 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.2.1", use_cache=False)
+            category="prompt", version="1.3.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
     # Inputs
-    prompt: str =             InputField(default="", description="starting point for the generated prompt", ui_component=UIComponent.Textarea)
-    split_prompt: bool =      InputField(default=False, description="If the prompt is too long, will split it with .and()")
-    max_new_tokens: int =     InputField(default=300, ge=5, le=800, description="the maximum allowed amount of new tokens to generate")
-    min_new_tokens: int =     InputField(default=30, ge=3, le=500, description="the minimum new tokens - NOTE, this can increase generation time")
-    max_time: float =         InputField(default=10.0, ge=5.0, le=120.0, description="Overrules min tokens; the max amount of time allowed to generate")
-    temp: float =             InputField(default=1.8, ge=0.5, le=4.0, description="Temperature")
-    top_p: float =            InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
-    top_k: int =              InputField(default=20, ge=5, le=80, description="Top K sampling")
-    repo_id: MODEL_REPOS =    InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
+    prompt: str =               InputField(default="", 
+                                           description="starting point for the generated prompt", ui_component=UIComponent.Textarea)
+    split_prompt: bool =        InputField(default=False, description="If the prompt is too long, will split it with .and()")
+    max_new_tokens: int =       InputField(default=300, ge=5, le=800, 
+                                           description="the maximum allowed amount of new tokens to generate")
+    min_new_tokens: int =       InputField(default=30, ge=3, le=500, 
+                                           description="the minimum new tokens - NOTE, this can increase generation time")
+    max_time: float =           InputField(default=10.0, ge=5.0, le=120.0, 
+                                           description="Overrules min tokens; the max amount of time allowed to generate")
+    temp: float =               InputField(default=1.8, ge=0.5, le=4.0, description="Temperature")
+    typical_p: float =          InputField(default=1.0, ge=0.1, le=4.0, description="Lower than 1.0 seems crazier, higher is more consistent.")
+    top_p: float =              InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
+    top_k: int =                InputField(default=20, ge=5, le=80, description="Top K sampling")
+    repetition_penalty: float = InputField(default=1.0, ge=0.5, le=3.0, description="Higher than 1.0 will try to prevent repetition.")
+    repo_id: MODEL_REPOS =      InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
 
 
     def loadGenerator(self, repo_id: str):
@@ -95,12 +101,16 @@ class NightmareInvocation(BaseInvocation):
         return splitted
 
 
-    def makePrompts(self, prompt: str, temp: float, p: float, k: int, mnt: int, mnnt: int, time: float):
+    def makePrompts(self, prompt: str, temp: float, 
+                    p: float, k: int, mnt: int, mnnt: int, time: float,
+                    reppen: float, typical: float):
         """loads textgen model, generates a (str) prompt, unloads model"""
         generator = self.loadGenerator(self.repo_id)
         output = generator(prompt, max_new_tokens=mnt, min_new_tokens=mnnt, 
                             temperature=temp, max_time=time,
                             do_sample=True, top_p=p, top_k=k,
+                            typical_p=1.5,
+                            repetition_penalty=1.5,
                             num_return_sequences=1,
                             return_full_text=False,
                             pad_token_id=generator.tokenizer.eos_token_id)
@@ -117,7 +127,8 @@ class NightmareInvocation(BaseInvocation):
             endsWithSpace = False
         prompt = self.prompt.strip()
         unescaped = self.makePrompts(prompt, self.temp, self.top_p, self.top_k, 
-                    self.max_new_tokens, self.min_new_tokens, self.max_time)
+                    self.max_new_tokens, self.min_new_tokens, self.max_time,
+                    self.repetition_penalty, self.typical_p)
         generated = unescaped.replace('"', r'\"').rstrip()
         prompt = f"{prompt}{endsWithSpace and ' ' or ''}"
         generated = f"{prompt}{generated}"
