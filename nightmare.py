@@ -46,7 +46,7 @@ class NightmareOutput(BaseInvocationOutput):
 
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.2.0", use_cache=False)
+            category="prompt", version="1.2.1", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -111,7 +111,10 @@ class NightmareInvocation(BaseInvocation):
 
     def invoke(self, context: InvocationContext) -> NightmareOutput:
         """ does the thing """
-        endsWithSpace = (self.prompt[-1] == " ")
+        if len(self.prompt) > 1:
+            endsWithSpace = (self.prompt[-1] == " ")
+        else:
+            endsWithSpace = False
         prompt = self.prompt.strip()
         unescaped = self.makePrompts(prompt, self.temp, self.top_p, self.top_k, 
                     self.max_new_tokens, self.min_new_tokens, self.max_time)
