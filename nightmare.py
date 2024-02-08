@@ -1,10 +1,9 @@
 import os
-from typing import Literal, Union
+from typing import Literal
 import random as r
 import re
 
 from omegaconf import OmegaConf
-from pydantic import BaseModel, Field
 from transformers import pipeline
 
 from invokeai.backend.util.devices import choose_torch_device, choose_precision
@@ -26,8 +25,9 @@ CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.
 DEFAULT_CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.default.yaml")
 try:
     conf = OmegaConf.load(CONF_PATH)
-except:
+except OSError as e:
     print("nightmare.yaml not found or not parsed correctly - loading nightmare.default.yaml instead...")
+    print(e)
     conf = OmegaConf.load(DEFAULT_CONF_PATH)
 MODEL_REPOS = Literal[tuple(conf['Nightmare']['Models'])]
 REPLACE = conf['Nightmare']['Replace']
@@ -35,18 +35,30 @@ MEM_CACHE = True
 
 dev = choose_torch_device()
 precis = choose_precision(dev)
-# print("***NIGHTMARE PROMPTGEN DEBUG***")
-# print(f"device: {dev}, precision: {precis}")
-# print("*"*30)
+
 
 @invocation_output("nightmare_str_output")
 class NightmareOutput(BaseInvocationOutput):
     """Nightmare prompt string output"""
     prompt: str = OutputField(description="The generated nightmare prompt string")
 
+@invocation_output("escaped_quotes_output")
+class EscapedOutput(BaseInvocationOutput):
+    """The input str with double quotes escaped"""
+    prompt: str = OutputField(description="The input str with double quotes escaped")
+
+
+@invocation("quote_escaper", title="Quote Escaper", tags=["quote", "escaper"],
+            category="prompt", version="1.0.0", use_cache=False)
+class EscaperInvocation(BaseInvocation):
+    """Escapes double quotes from input strings"""
+    prompt: str = InputField(default="", description="the string to escape quotes from")
+
+    def invoke(self, context: InvocationContext) -> EscapedOutput:
+        return EscapedOutput(prompt=self.prompt.replace('"',r'\"'))
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.3.0", use_cache=False)
+            category="prompt", version="1.3.2", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -54,9 +66,9 @@ class NightmareInvocation(BaseInvocation):
     prompt: str =               InputField(default="", 
                                            description="starting point for the generated prompt", ui_component=UIComponent.Textarea)
     split_prompt: bool =        InputField(default=False, description="If the prompt is too long, will split it with .and()")
-    max_new_tokens: int =       InputField(default=300, ge=5, le=800, 
+    max_new_tokens: int =       InputField(default=300, ge=3, le=1200, 
                                            description="the maximum allowed amount of new tokens to generate")
-    min_new_tokens: int =       InputField(default=30, ge=3, le=500, 
+    min_new_tokens: int =       InputField(default=30, ge=0, le=800, 
                                            description="the minimum new tokens - NOTE, this can increase generation time")
     max_time: float =           InputField(default=10.0, ge=5.0, le=120.0, 
                                            description="Overrules min tokens; the max amount of time allowed to generate")
@@ -109,8 +121,8 @@ class NightmareInvocation(BaseInvocation):
         output = generator(prompt, max_new_tokens=mnt, min_new_tokens=mnnt, 
                             temperature=temp, max_time=time,
                             do_sample=True, top_p=p, top_k=k,
-                            typical_p=1.5,
-                            repetition_penalty=1.5,
+                            typical_p=typical,
+                            repetition_penalty=reppen,
                             num_return_sequences=1,
                             return_full_text=False,
                             pad_token_id=generator.tokenizer.eos_token_id)
@@ -130,7 +142,7 @@ class NightmareInvocation(BaseInvocation):
                     self.max_new_tokens, self.min_new_tokens, self.max_time,
                     self.repetition_penalty, self.typical_p)
         generated = unescaped.replace('"', r'\"').rstrip()
-        prompt = f"{prompt}{endsWithSpace and ' ' or ''}"
+        prompt = f"{self.censor(prompt)}{endsWithSpace and ' ' or ''}"
         generated = f"{prompt}{generated}"
         if len(generated) > 200 and self.split_prompt:
             context.services.logger.info("[nightmare promptgen] I AM GONNA SPLIT!!!")
