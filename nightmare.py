@@ -2,6 +2,7 @@ import os
 from typing import Literal
 import random as r
 import re
+from unicodedata import category
 
 from omegaconf import OmegaConf
 from transformers import pipeline
@@ -58,7 +59,7 @@ class EscaperInvocation(BaseInvocation):
         return EscapedOutput(prompt=self.prompt.replace('"',r'\"'))
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.3.2", use_cache=False)
+            category="prompt", version="1.4.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -77,12 +78,13 @@ class NightmareInvocation(BaseInvocation):
     top_p: float =              InputField(default=0.9, ge=0.2, le=0.98, description="Top P sampling")
     top_k: int =                InputField(default=20, ge=5, le=80, description="Top K sampling")
     repetition_penalty: float = InputField(default=1.0, ge=0.5, le=3.0, description="Higher than 1.0 will try to prevent repetition.")
+    instruct_mode: bool =       InputField(default=False, description="If you are using an 'instruct/chat' style model, enable this.")
     repo_id: MODEL_REPOS =      InputField(default='cactusfriend/nightmare-promptgen-XL', input=Input.Direct)
 
 
-    def loadGenerator(self, repo_id: str):
+    def loadGenerator(self, repo_id: str, task: str):
         """loads the tokenizer, model, etc for the generator"""     
-        generator = pipeline(model=repo_id, tokenizer=repo_id, task="text-generation", use_fast=False, device=dev)
+        generator = pipeline(model=repo_id, tokenizer=repo_id, task=task, use_fast=False, device=dev)
         return generator
 
 
@@ -113,19 +115,28 @@ class NightmareInvocation(BaseInvocation):
         return splitted
 
 
-    def makePrompts(self, prompt: str, temp: float, 
+    def makePrompts(self, task: str, prompt: str, temp: float, 
                     p: float, k: int, mnt: int, mnnt: int, time: float,
                     reppen: float, typical: float):
         """loads textgen model, generates a (str) prompt, unloads model"""
-        generator = self.loadGenerator(self.repo_id)
-        output = generator(prompt, max_new_tokens=mnt, min_new_tokens=mnnt, 
-                            temperature=temp, max_time=time,
-                            do_sample=True, top_p=p, top_k=k,
-                            typical_p=typical,
-                            repetition_penalty=reppen,
-                            num_return_sequences=1,
-                            return_full_text=False,
-                            pad_token_id=generator.tokenizer.eos_token_id)
+        generator = self.loadGenerator(self.repo_id, task)
+        if task == "text-generation":
+            output = generator(prompt, max_new_tokens=mnt, min_new_tokens=mnnt, 
+                                temperature=temp, max_time=time,
+                                do_sample=True, top_p=p, top_k=k,
+                                typical_p=typical,
+                                repetition_penalty=reppen,
+                                num_return_sequences=1,
+                                return_full_text=False,
+                                pad_token_id=generator.tokenizer.eos_token_id)
+        elif task == "text2text-generation":
+            output = generator(prompt, max_new_tokens=mnt, min_new_tokens=mnnt, 
+                                temperature=temp, max_time=time,
+                                do_sample=True, top_p=p, top_k=k,
+                                typical_p=typical,
+                                repetition_penalty=reppen,
+                                num_return_sequences=1,
+                                pad_token_id=generator.tokenizer.eos_token_id)       
 
         del generator
         return self.censor(output[0]['generated_text'].rstrip())
@@ -137,13 +148,18 @@ class NightmareInvocation(BaseInvocation):
             endsWithSpace = (self.prompt[-1] == " ")
         else:
             endsWithSpace = False
+        if self.instruct_mode:
+            task = "text2text-generation"
+        else:
+            task = "text-generation"
         prompt = self.prompt.strip()
-        unescaped = self.makePrompts(prompt, self.temp, self.top_p, self.top_k, 
+        unescaped = self.makePrompts(task, prompt, self.temp, self.top_p, self.top_k, 
                     self.max_new_tokens, self.min_new_tokens, self.max_time,
                     self.repetition_penalty, self.typical_p)
         generated = unescaped.replace('"', r'\"').rstrip()
         prompt = f"{self.censor(prompt)}{endsWithSpace and ' ' or ''}"
-        generated = f"{prompt}{generated}"
+        if not self.instruct_mode:
+            generated = f"{prompt}{generated}"
         if len(generated) > 200 and self.split_prompt:
             context.services.logger.info("[nightmare promptgen] I AM GONNA SPLIT!!!")
             start = '("'
@@ -152,6 +168,7 @@ class NightmareInvocation(BaseInvocation):
             together = '","'.join([i for i in split_prompt])
             generated = f"{start}{together}{end}"
             generated = re.sub('\s+',' ', generated)
+            generated = "".join(ch for ch in generated if category(ch)[0]!="C") #further clean up weird control characters
         nl, bl, nr = "\n", "\033[1m", "\033[0m"
         context.services.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
         return NightmareOutput(prompt=generated)
