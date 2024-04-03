@@ -9,7 +9,7 @@ from transformers import pipeline
 
 from invokeai.backend.util.devices import choose_torch_device, choose_precision
 
-from invokeai.app.invocations.baseinvocation import (
+from invokeai.invocation_api import (
     BaseInvocation,
     BaseInvocationOutput,
     Input,
@@ -59,7 +59,7 @@ class EscaperInvocation(BaseInvocation):
         return EscapedOutput(prompt=self.prompt.replace('"',r'\"'))
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.4.0", use_cache=False)
+            category="prompt", version="1.5.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -161,7 +161,7 @@ class NightmareInvocation(BaseInvocation):
         if not self.instruct_mode:
             generated = f"{prompt}{generated}"
         if len(generated) > 200 and self.split_prompt:
-            context.services.logger.info("[nightmare promptgen] I AM GONNA SPLIT!!!")
+            context.logger.info("[nightmare promptgen] I AM GONNA SPLIT!!!")
             start = '("'
             end = '").and()'
             split_prompt = self.splitPrompt(generated)
@@ -170,5 +170,5 @@ class NightmareInvocation(BaseInvocation):
             generated = re.sub('\s+',' ', generated)
             generated = "".join(ch for ch in generated if category(ch)[0]!="C") #further clean up weird control characters
         nl, bl, nr = "\n", "\033[1m", "\033[0m"
-        context.services.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
+        context.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
         return NightmareOutput(prompt=generated)
