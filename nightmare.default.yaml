@@ -1,5 +1,6 @@
 Nightmare:
   Models:
+    - cactusfriend/nightmare-promptgen-3
     - cactusfriend/nightmare-promptgen-XL
     - cactusfriend/nightmare-invokeai-prompts
   Replace:
