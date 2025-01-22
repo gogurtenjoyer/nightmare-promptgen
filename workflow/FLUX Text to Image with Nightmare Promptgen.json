@@ -1,0 +1,482 @@
+{
+  "name": "FLUX Text to Image with Nightmare Promptgen",
+  "author": "Gogurt Enjoyer",
+  "description": "The default Flux Text to Image workflow, with Nightmare Promptgen Node added. Upon initial run, the chosen model under 'Repo Id' will be downloaded, but then cached thereafter.",
+  "version": "1.1.0",
+  "contact": "",
+  "tags": "text2image, flux, nightmare,",
+  "notes": "Prerequisite model downloads: T5 Encoder, CLIP-L Encoder, and FLUX VAE. Quantized and un-quantized versions can be found in the starter models tab within your Model Manager. We recommend 4 steps for FLUX schnell models and 30 steps for FLUX dev models.",
+  "exposedFields": [
+    {
+      "nodeId": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "fieldName": "model"
+    },
+    {
+      "nodeId": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "fieldName": "t5_encoder_model"
+    },
+    {
+      "nodeId": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "fieldName": "clip_embed_model"
+    },
+    {
+      "nodeId": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "fieldName": "vae_model"
+    },
+    {
+      "nodeId": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "fieldName": "prompt"
+    }
+  ],
+  "meta": {
+    "version": "3.0.0",
+    "category": "user"
+  },
+  "id": "7b15818c-98cb-4b91-9304-a855557695bd",
+  "nodes": [
+    {
+      "id": "50be4843-645f-4871-a2e0-a3ab066acf44",
+      "type": "invocation",
+      "data": {
+        "id": "50be4843-645f-4871-a2e0-a3ab066acf44",
+        "type": "nightmare_promptgen",
+        "version": "1.6.0",
+        "label": "",
+        "notes": "",
+        "isOpen": true,
+        "isIntermediate": true,
+        "useCache": false,
+        "nodePack": "nightmare-promptgen",
+        "inputs": {
+          "prompt": {
+            "name": "prompt",
+            "label": "",
+            "value": "A photograph of a cute puppy"
+          },
+          "max_new_tokens": {
+            "name": "max_new_tokens",
+            "label": "",
+            "value": 300
+          },
+          "min_new_tokens": {
+            "name": "min_new_tokens",
+            "label": "",
+            "value": 30
+          },
+          "max_time": {
+            "name": "max_time",
+            "label": "",
+            "value": 10
+          },
+          "temp": {
+            "name": "temp",
+            "label": "",
+            "value": 1.8
+          },
+          "typical_p": {
+            "name": "typical_p",
+            "label": "",
+            "value": 1
+          },
+          "top_p": {
+            "name": "top_p",
+            "label": "",
+            "value": 0.9
+          },
+          "top_k": {
+            "name": "top_k",
+            "label": "",
+            "value": 20
+          },
+          "repetition_penalty": {
+            "name": "repetition_penalty",
+            "label": "",
+            "value": 1
+          },
+          "include_starter": {
+            "name": "include_starter",
+            "label": "",
+            "value": true
+          },
+          "repo_id": {
+            "name": "repo_id",
+            "label": "",
+            "value": "cactusfriend/nightmare-promptgen-3"
+          }
+        }
+      },
+      "position": {
+        "x": 778.6239134492844,
+        "y": 116.51175183016207
+      }
+    },
+    {
+      "id": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "type": "invocation",
+      "data": {
+        "id": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+        "type": "flux_text_encoder",
+        "version": "1.1.1",
+        "label": "",
+        "notes": "",
+        "isOpen": true,
+        "isIntermediate": true,
+        "useCache": true,
+        "inputs": {
+          "clip": {
+            "name": "clip",
+            "label": ""
+          },
+          "t5_encoder": {
+            "name": "t5_encoder",
+            "label": ""
+          },
+          "t5_max_seq_len": {
+            "name": "t5_max_seq_len",
+            "label": "T5 Max Seq Len",
+            "value": 256
+          },
+          "prompt": {
+            "name": "prompt",
+            "label": "",
+            "value": ""
+          },
+          "mask": {
+            "name": "mask",
+            "label": ""
+          }
+        },
+        "nodePack": "invokeai"
+      },
+      "position": {
+        "x": 778.4899149328337,
+        "y": -100.36469216659502
+      }
+    },
+    {
+      "id": "7e5172eb-48c1-44db-a770-8fd83e1435d1",
+      "type": "invocation",
+      "data": {
+        "id": "7e5172eb-48c1-44db-a770-8fd83e1435d1",
+        "type": "flux_vae_decode",
+        "version": "1.0.1",
+        "label": "",
+        "notes": "",
+        "isOpen": true,
+        "isIntermediate": false,
+        "useCache": true,
+        "inputs": {
+          "board": {
+            "name": "board",
+            "label": ""
+          },
+          "metadata": {
+            "name": "metadata",
+            "label": ""
+          },
+          "latents": {
+            "name": "latents",
+            "label": ""
+          },
+          "vae": {
+            "name": "vae",
+            "label": ""
+          }
+        },
+        "nodePack": "invokeai"
+      },
+      "position": {
+        "x": 1575.5797431839133,
+        "y": -209.00150975507415
+      }
+    },
+    {
+      "id": "0940bc54-21fb-4346-bc68-fca5724c2747",
+      "type": "invocation",
+      "data": {
+        "id": "0940bc54-21fb-4346-bc68-fca5724c2747",
+        "type": "flux_denoise",
+        "version": "3.2.2",
+        "label": "",
+        "notes": "",
+        "isOpen": true,
+        "isIntermediate": true,
+        "useCache": true,
+        "nodePack": "invokeai",
+        "inputs": {
+          "board": {
+            "name": "board",
+            "label": ""
+          },
+          "metadata": {
+            "name": "metadata",
+            "label": ""
+          },
+          "latents": {
+            "name": "latents",
+            "label": ""
+          },
+          "denoise_mask": {
+            "name": "denoise_mask",
+            "label": "Denoise Mask"
+          },
+          "denoising_start": {
+            "name": "denoising_start",
+            "label": "",
+            "value": 0
+          },
+          "denoising_end": {
+            "name": "denoising_end",
+            "label": "",
+            "value": 1
+          },
+          "add_noise": {
+            "name": "add_noise",
+            "label": "",
+            "value": true
+          },
+          "transformer": {
+            "name": "transformer",
+            "label": ""
+          },
+          "control_lora": {
+            "name": "control_lora",
+            "label": ""
+          },
+          "positive_text_conditioning": {
+            "name": "positive_text_conditioning",
+            "label": ""
+          },
+          "negative_text_conditioning": {
+            "name": "negative_text_conditioning",
+            "label": ""
+          },
+          "cfg_scale": {
+            "name": "cfg_scale",
+            "label": "",
+            "value": 1
+          },
+          "cfg_scale_start_step": {
+            "name": "cfg_scale_start_step",
+            "label": "",
+            "value": 0
+          },
+          "cfg_scale_end_step": {
+            "name": "cfg_scale_end_step",
+            "label": "",
+            "value": -1
+          },
+          "width": {
+            "name": "width",
+            "label": "",
+            "value": 1024
+          },
+          "height": {
+            "name": "height",
+            "label": "",
+            "value": 1024
+          },
+          "num_steps": {
+            "name": "num_steps",
+            "label": "",
+            "value": 30
+          },
+          "guidance": {
+            "name": "guidance",
+            "label": "",
+            "value": 3.5
+          },
+          "seed": {
+            "name": "seed",
+            "label": "",
+            "value": 0
+          },
+          "control": {
+            "name": "control",
+            "label": ""
+          },
+          "controlnet_vae": {
+            "name": "controlnet_vae",
+            "label": ""
+          },
+          "ip_adapter": {
+            "name": "ip_adapter",
+            "label": ""
+          }
+        }
+      },
+      "position": {
+        "x": 1180.8001377784371,
+        "y": -219.96908055568326
+      }
+    },
+    {
+      "id": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "type": "invocation",
+      "data": {
+        "id": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+        "type": "flux_model_loader",
+        "version": "1.0.4",
+        "label": "",
+        "notes": "",
+        "isOpen": true,
+        "isIntermediate": true,
+        "useCache": false,
+        "inputs": {
+          "model": {
+            "name": "model",
+            "label": "",
+            "value": {
+              "key": "3502f987-ff41-49ba-b030-23326fe01a17",
+              "hash": "blake3:8e532c2cb80971c1fc56074e63adcfcaba7b2e1c7c79afda98a459aafd4f4b87",
+              "name": "FLUX Dev (Quantized)",
+              "base": "flux",
+              "type": "main"
+            }
+          },
+          "t5_encoder_model": {
+            "name": "t5_encoder_model",
+            "label": "",
+            "value": {
+              "key": "3d60028a-01a7-454a-b63a-fe5e6e83e0cf",
+              "hash": "blake3:38aafa42899cf4fe8b1055d17de6e7fe15af104d193da4a320e34ca24db32754",
+              "name": "t5_bnb_int8_quantized_encoder",
+              "base": "any",
+              "type": "t5_encoder"
+            }
+          },
+          "clip_embed_model": {
+            "name": "clip_embed_model",
+            "label": "",
+            "value": {
+              "key": "88defd02-6b57-4621-b2e6-ba45cdd15e54",
+              "hash": "blake3:84064b6df90ac2713600d100f4a73e1d57ab472d8dc17e5683a05f9dcf481722",
+              "name": "CLIP-GmP-ViT-L-14",
+              "base": "any",
+              "type": "clip_embed"
+            }
+          },
+          "vae_model": {
+            "name": "vae_model",
+            "label": "",
+            "value": {
+              "key": "fef41896-533d-4641-83b5-4577537627a6",
+              "hash": "blake3:ce21cb76364aa6e2421311cf4a4b5eb052a76c4f1cd207b50703d8978198a068",
+              "name": "FLUX.1-schnell_ae",
+              "base": "flux",
+              "type": "vae"
+            }
+          }
+        }
+      },
+      "position": {
+        "x": 381.1882713063478,
+        "y": -95.89663532854017
+      }
+    },
+    {
+      "id": "4754c534-a5f3-4ad0-9382-7887985e668c",
+      "type": "invocation",
+      "data": {
+        "id": "4754c534-a5f3-4ad0-9382-7887985e668c",
+        "type": "rand_int",
+        "version": "1.0.1",
+        "label": "",
+        "notes": "",
+        "isOpen": true,
+        "isIntermediate": true,
+        "useCache": false,
+        "inputs": {
+          "low": {
+            "name": "low",
+            "label": "",
+            "value": 0
+          },
+          "high": {
+            "name": "high",
+            "label": "",
+            "value": 2147483647
+          }
+        }
+      },
+      "position": {
+        "x": 1180.2614272951466,
+        "y": 709.9671286311818
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "reactflow__edge-50be4843-645f-4871-a2e0-a3ab066acf44prompt-01f674f8-b3d1-4df1-acac-6cb8e0bfb63cprompt",
+      "type": "default",
+      "source": "50be4843-645f-4871-a2e0-a3ab066acf44",
+      "target": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "sourceHandle": "prompt",
+      "targetHandle": "prompt"
+    },
+    {
+      "id": "reactflow__edge-0940bc54-21fb-4346-bc68-fca5724c2747latents-7e5172eb-48c1-44db-a770-8fd83e1435d1latents",
+      "type": "default",
+      "source": "0940bc54-21fb-4346-bc68-fca5724c2747",
+      "target": "7e5172eb-48c1-44db-a770-8fd83e1435d1",
+      "sourceHandle": "latents",
+      "targetHandle": "latents"
+    },
+    {
+      "id": "reactflow__edge-4754c534-a5f3-4ad0-9382-7887985e668cvalue-0940bc54-21fb-4346-bc68-fca5724c2747seed",
+      "type": "default",
+      "source": "4754c534-a5f3-4ad0-9382-7887985e668c",
+      "target": "0940bc54-21fb-4346-bc68-fca5724c2747",
+      "sourceHandle": "value",
+      "targetHandle": "seed"
+    },
+    {
+      "id": "reactflow__edge-01f674f8-b3d1-4df1-acac-6cb8e0bfb63cconditioning-0940bc54-21fb-4346-bc68-fca5724c2747positive_text_conditioning",
+      "type": "default",
+      "source": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "target": "0940bc54-21fb-4346-bc68-fca5724c2747",
+      "sourceHandle": "conditioning",
+      "targetHandle": "positive_text_conditioning"
+    },
+    {
+      "id": "reactflow__edge-f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90transformer-0940bc54-21fb-4346-bc68-fca5724c2747transformer",
+      "type": "default",
+      "source": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "target": "0940bc54-21fb-4346-bc68-fca5724c2747",
+      "sourceHandle": "transformer",
+      "targetHandle": "transformer"
+    },
+    {
+      "id": "reactflow__edge-f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90vae-7e5172eb-48c1-44db-a770-8fd83e1435d1vae",
+      "type": "default",
+      "source": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "target": "7e5172eb-48c1-44db-a770-8fd83e1435d1",
+      "sourceHandle": "vae",
+      "targetHandle": "vae"
+    },
+    {
+      "id": "reactflow__edge-f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90max_seq_len-01f674f8-b3d1-4df1-acac-6cb8e0bfb63ct5_max_seq_len",
+      "type": "default",
+      "source": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "target": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "sourceHandle": "max_seq_len",
+      "targetHandle": "t5_max_seq_len"
+    },
+    {
+      "id": "reactflow__edge-f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90t5_encoder-01f674f8-b3d1-4df1-acac-6cb8e0bfb63ct5_encoder",
+      "type": "default",
+      "source": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "target": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "sourceHandle": "t5_encoder",
+      "targetHandle": "t5_encoder"
+    },
+    {
+      "id": "reactflow__edge-f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90clip-01f674f8-b3d1-4df1-acac-6cb8e0bfb63cclip",
+      "type": "default",
+      "source": "f8d9d7c8-9ed7-4bd7-9e42-ab0e89bfac90",
+      "target": "01f674f8-b3d1-4df1-acac-6cb8e0bfb63c",
+      "sourceHandle": "clip",
+      "targetHandle": "clip"
+    }
+  ]
+}
