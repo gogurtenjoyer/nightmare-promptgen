@@ -7,4 +7,4 @@ steps:
       version: ${{ github.sha }}
     env:
       ROLLBAR_ACCESS_TOKEN: ${{ secrets.ROLLBAR_ACCESS_TOKEN }}
-      ROLLBAR_USERNAME: ${{ github.actor }}
+      ROLLBAR_USERNAME: ${{ ROLLBAR_USERNAME }}
