@@ -11,4 +11,4 @@ jobs:
           version: ${{ github.sha }}
         env:
           ROLLBAR_ACCESS_TOKEN: ${{ secrets.ROLLBAR_ACCESS_TOKEN }}
-          ROLLBAR_USERNAME: ${{ ROLLBAR_USERNAME }}
+          ROLLBAR_USERNAME: ${{ env.ROLLBAR_USERNAME }}
