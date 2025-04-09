@@ -4,13 +4,9 @@ import random as r
 import re
 from unicodedata import category
 import torch
-
-from omegaconf import OmegaConf
+import yaml
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
-#from invokeai.backend.util.devices import choose_torch_device, torch_dtype
 from invokeai.backend.util.devices import TorchDevice
-
 from invokeai.invocation_api import (
     BaseInvocation,
     BaseInvocationOutput,
@@ -27,21 +23,21 @@ from invokeai.invocation_api import (
 CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.yaml")
 DEFAULT_CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.default.yaml")
 try:
-    conf = OmegaConf.load(CONF_PATH)
+    #conf = OmegaConf.load(CONF_PATH)
+    with open(CONF_PATH, 'r') as yamldata:
+        conf = yaml.safe_load(yamldata)
 except OSError as e:
     print("nightmare.yaml not found or not parsed correctly - loading nightmare.default.yaml instead...")
     print(e)
-    conf = OmegaConf.load(DEFAULT_CONF_PATH)
+    #conf = OmegaConf.load(DEFAULT_CONF_PATH)
+    with open(DEFAULT_CONF_PATH) as yamldata:
+        conf = yaml.safe_load(yamldata)
 MODEL_REPOS = Literal[tuple(conf['Nightmare']['Models'])]
 REPLACE = conf['Nightmare']['Replace']
 MEM_CACHE = True
 
 dev = TorchDevice.choose_torch_device()
 precis = TorchDevice.choose_torch_dtype()
-
-#if dev == torch.device("mps"):
-#    print("[nightmare promptgen] whoops, I'm on MPS, switching to CPU")
-#    dev = torch.device("cpu")
 
 
 @invocation_output("nightmare_str_output")
@@ -64,8 +60,9 @@ class EscaperInvocation(BaseInvocation):
     def invoke(self, context: InvocationContext) -> EscapedOutput:
         return EscapedOutput(prompt=self.prompt.replace('"',r'\"'))
 
-@invocation("nightmare_promptgen", title="Nightmare Promptgen", tags=["nightmare", "prompt"],
-            category="prompt", version="1.6.0", use_cache=False)
+@invocation("nightmare_promptgen", title="Nightmare Promptgen", 
+            tags=["nightmare", "prompt", "promptgen"],
+            category="prompt", version="1.6.3", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -112,21 +109,6 @@ class NightmareInvocation(BaseInvocation):
         return phrase
 
 
-    def splitPrompt(self, text):
-        """ If the prompt is too long, let's split it up for .and() """
-        puncts = ['.', ',', ';', '--']
-        splitted = []
-        while len(text) > 200:
-            cut_where, cut_why = max((text.rfind(punc, 0, 193), punc) for punc in puncts)
-            if cut_where <= 0:
-                cut_where = text.rfind(' ', 0, 193)
-                cut_why = ' '
-            cut_where += len(cut_why)
-            splitted.append(text[:cut_where].rstrip())
-            text = text[cut_where:].lstrip()
-        splitted.append(text)
-        return splitted
-
     @torch.inference_mode
     def makePrompts(self, task: str, prompt: str, temp: float, 
                     p: float, k: int, mnt: int, mnnt: int, time: float,
@@ -170,15 +152,8 @@ class NightmareInvocation(BaseInvocation):
         if not self.include_starter:
             generated = generated.replace(prompt_censored, "")
 
-        # if len(generated) > 200 and self.split_prompt:
-        #     context.logger.info("[nightmare promptgen] I AM GONNA SPLIT!!!")
-        #     start = '("'
-        #     end = '").and()'
-        #     split_prompt = self.splitPrompt(generated)
-        #     together = '","'.join([i for i in split_prompt])
-        #     generated = f"{start}{together}{end}"
-        #     generated = re.sub('\s+',' ', generated)
-        #     generated = "".join(ch for ch in generated if category(ch)[0]!="C") #further clean up weird control characters
+        generated = re.sub('\s+',' ', generated)
+        generated = "".join(ch for ch in generated if category(ch)[0]!="C") #further clean up weird control characters
         nl, bl, nr = "\n", "\033[1m", "\033[0m"
         context.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
         return NightmareOutput(prompt=generated)

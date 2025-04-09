@@ -18,5 +18,5 @@ Nightmare:
       - attired
       - well-dressed
       - suited-up
-    ^test^:
-      - CORRECT
+    #^test^:
+    #  - this is how you'd do a partial word replacement, this would replace 'test' in 'detestable' etc
