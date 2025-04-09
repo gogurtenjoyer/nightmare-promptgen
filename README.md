@@ -11,7 +11,7 @@ Navigate to your nodes folder (in your InvokeAI 3.4+ root folder), and run
 ```
 git clone https://github.com/gogurtenjoyer/nightmare-promptgen
 ```
-Alternately, you can download a zip of this repo with the green button in the upper-right here, and unzip it in your nodes folder.
+Alternately, you can download a zip of this repo with the green 'Code' button in the upper-right here (then 'Download ZIP'), and unzip it in your nodes folder.
 
 ### Updating
 To update, just `cd` into the `nightmare-promptgen` folder in your InvokeAI `nodes` folder, and run `git pull`. Otherwise, you can just download `nightmare.py` from this page and replace the older one.
