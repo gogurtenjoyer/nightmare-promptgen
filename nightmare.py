@@ -62,7 +62,7 @@ class EscaperInvocation(BaseInvocation):
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", 
             tags=["nightmare", "prompt", "promptgen"],
-            category="prompt", version="1.6.3", use_cache=False)
+            category="prompt", version="1.6.4", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -152,7 +152,7 @@ class NightmareInvocation(BaseInvocation):
         if not self.include_starter:
             generated = generated.replace(prompt_censored, "")
 
-        generated = re.sub('\s+',' ', generated)
+        generated = re.sub(r'\s+',' ', generated)
         generated = "".join(ch for ch in generated if category(ch)[0]!="C") #further clean up weird control characters
         nl, bl, nr = "\n", "\033[1m", "\033[0m"
         context.logger.info(f"{nl}{nl}*** YOUR {bl}NIGHTMARE{nr} IS BELOW ***{nl}{generated}")
