@@ -1,0 +1,31 @@
+Nightmare:
+  Models:
+    nightmare-promptqwen3:
+        repo: cactusfriend/nightmare-promptqwen3
+        type: lora
+        quant: nf4
+    nightmare-promptgen-xl:
+        repo: cactusfriend/nightmare-promptgen-XL
+        type: base
+        quant: none
+    nightmare-promptgen-1:
+        repo: cactusfriend/nightmare-invokeai-prompts
+        type: base
+        quant: none
+  Replace:
+    Dunston:
+      - Alien Fanky
+      - Ralph
+      - Puppers Guy
+      - Wheedle
+      - Ditch Man
+    orangutan:
+      - jungle animal
+      - treetop monster
+      - sloth
+    nude:
+      - attired
+      - well-dressed
+      - suited-up
+    #^test^:
+    #  - this is how you'd do a partial word replacement, this would replace 'test' in 'detestable' etc

@@ -5,6 +5,7 @@ import re
 from unicodedata import category
 import torch
 import yaml
+from peft import AutoPeftModelForCausalLM
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from invokeai.backend.util.devices import TorchDevice
 from invokeai.invocation_api import (
@@ -20,14 +21,14 @@ from invokeai.invocation_api import (
 )
 
 # load the config file - thanks to SkunkWorxDark for the update here
-CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.yaml")
-DEFAULT_CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare.default.yaml")
+CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare-new.yaml")
+DEFAULT_CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nightmare-new.default.yaml")
 try:
     #conf = OmegaConf.load(CONF_PATH)
     with open(CONF_PATH, 'r') as yamldata:
         conf = yaml.safe_load(yamldata)
 except OSError as e:
-    print("nightmare.yaml not found or not parsed correctly - loading nightmare.default.yaml instead...")
+    print("nightmare-new.yaml not found or not parsed correctly - loading nightmare.default.yaml instead...")
     print(e)
     #conf = OmegaConf.load(DEFAULT_CONF_PATH)
     with open(DEFAULT_CONF_PATH) as yamldata:
@@ -62,7 +63,7 @@ class EscaperInvocation(BaseInvocation):
 
 @invocation("nightmare_promptgen", title="Nightmare Promptgen", 
             tags=["nightmare", "prompt", "promptgen"],
-            category="prompt", version="1.6.4", use_cache=False)
+            category="prompt", version="2.0.0", use_cache=False)
 class NightmareInvocation(BaseInvocation):
     """makes new friends"""
 
@@ -82,19 +83,22 @@ class NightmareInvocation(BaseInvocation):
     top_k: int =                InputField(default=20, ge=5, le=80, description="Top K sampling")
     repetition_penalty: float = InputField(default=1.0, ge=0.5, le=3.0, description="Higher than 1.0 will try to prevent repetition.")
     include_starter: bool =     InputField(default=True, description="Include your prompt starter with the output or not.")
-    repo_id: MODEL_REPOS =      InputField(default='cactusfriend/nightmare-promptgen-3', input=Input.Direct)
+    model: MODEL_REPOS =        InputField(default='nightmare-promptqwen3', input=Input.Direct)
 
 
-    def loadGenerator(self, repo_id: str, task: str):
+    def loadGenerator(self, model_choice: str, task: str):
         """loads the tokenizer, model, etc for the generator"""     
         #generator = pipeline(model=repo_id, tokenizer=repo_id, 
         #                     task=task, use_fast=False, device=dev, 
         #                     torch_dtype = torch_dtype(dev), trust_remote_code=True)
         #return generator
-        tokenizer = AutoTokenizer.from_pretrained(repo_id, use_fast=False)
-        model = AutoModelForCausalLM.from_pretrained(repo_id, 
-                                                    trust_remote_code=True, 
-                                                    torch_dtype = precis).to(dev)
+        model_conf = conf["Nightmare"]["Models"][model_choice]
+        if model_conf["type"] == "lora":
+            model = AutoPeftModelForCausalLM.from_pretrained(model_conf["repo"], torch_dtype=precis).to(dev)
+            tokenizer = AutoTokenizer.from_pretrained(model.peft_config["default"].base_model_name_or_path)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_conf["repo"], use_fast=False)
+            model = AutoModelForCausalLM.from_pretrained(model_conf["repo"], torch_dtype = precis).to(dev)
         return tokenizer, model
 
 
@@ -114,8 +118,8 @@ class NightmareInvocation(BaseInvocation):
                     p: float, k: int, mnt: int, mnnt: int, time: float,
                     reppen: float, typical: float):
         """loads textgen model, generates a (str) prompt, unloads model"""
-        tokenizer, model = self.loadGenerator(self.repo_id, task)
-        begin = tokenizer.bos_token
+        tokenizer, model = self.loadGenerator(self.model, task)
+        begin = tokenizer.bos_token or ""
         input = tokenizer(f"{begin}{prompt}", return_tensors="pt", padding=True).to(dev)
         if task == "text-generation":
             output = model.generate(input.input_ids, attention_mask=input.attention_mask, 
