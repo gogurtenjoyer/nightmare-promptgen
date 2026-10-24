@@ -12,6 +12,11 @@ Nightmare:
         repo: cactusfriend/nightmare-invokeai-prompts
         type: base
         quant: none
+  InstructModels:
+    nightmare-promptqwen3-instruct:
+        repo: cactusfriend/nightmare-promptqwen3-instruct
+        type: lora
+        quant: nf4
   Replace:
     Dunston:
       - Alien Fanky
