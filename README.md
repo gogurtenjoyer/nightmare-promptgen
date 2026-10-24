@@ -22,10 +22,14 @@ Add the node as you would any other, then connect its output to a Compel positiv
 Note: the first time you use this node in your workflow, it'll download a text generation model.
 The default model is the `Nightmare Promptgen 3` model (1.8gb or so), but if you'd like to save memory and download time, feel free to try the original: `cactusfriend/nightmare-invokeai-prompts` (550mb) or the `XL` version (1.5gb). These models were specifically trained with InvokeAI's Compel prompt format in mind, and NP3 is particularly smart, but feel free to try other text generation models!
 
+**Note:** Nightmare Promptgen 3 has been replaced by `Nightmare Promptqwen 3` due to compatibility issues. There's also an instruct version of this model, used with the new instruct node.
+
 ## The `nightmare.yaml` config file
 You can duplicate or rename `nightmare.default.yaml` to `nightmare.yaml`, and the node will load this file, instead of the default. It'll fall back to the default file if there's a problem with your customized `nightmare.yaml`, as well.
 
-You can add Huggingface repo IDs (or local file paths) for textgen models to the `Models` section, and words and a list of their replacements to the `Replace` section.
+**Note:** Use `nightmare-new.yaml` now, as it has updated fields for more model types, and for the new instruct node. Older `nightmare.yaml` isn't used, nor is the default version.
+
+You can add Huggingface repo IDs (or local file paths) for textgen models to the `Models` or `InstructModels` section, and words and a list of their replacements to the `Replace` section. LoRAs using PEFT are supported, as well.
 
 ### New (old) replace behavior
 The default word replacement behavior checks that the word is separated from others by whitespace or punctuation; for example:
